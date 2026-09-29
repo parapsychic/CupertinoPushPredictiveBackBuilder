@@ -1,0 +1,6 @@
+# Track only Dart sources + pubspec. Regenerate platform folders with `flutter create .`
+/*
+!/.gitignore
+!/pubspec.yaml
+!/analysis_options.yaml
+!/lib/
