@@ -2,19 +2,48 @@ import 'package:cupertino_predictive_back/cupertino_predictive_back.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// Switches the Android builder so it can be compared with Flutter's default.
-final ValueNotifier<bool> useCupertinoPush = ValueNotifier<bool>(true);
+/// The Android builders to compare, with what their push and pop look like.
+const List<(String, String, PageTransitionsBuilder)> _builders =
+    <(String, String, PageTransitionsBuilder)>[
+      (
+        'CupertinoPushPredictiveBackBuilder',
+        'Push and pop slide like iOS',
+        CupertinoPushPredictiveBackBuilder(),
+      ),
+      (
+        'CupertinoPushPredictiveBackFullscreenBuilder',
+        'Push and pop slide like iOS; full-screen back swipe',
+        CupertinoPushPredictiveBackFullscreenBuilder(),
+      ),
+      (
+        'ZoomPushPredictiveBackBuilder',
+        'Push and pop zoom like Android',
+        ZoomPushPredictiveBackBuilder(),
+      ),
+      (
+        'ZoomPushPredictiveBackFullscreenBuilder',
+        'Push and pop zoom like Android; full-screen back swipe',
+        ZoomPushPredictiveBackFullscreenBuilder(),
+      ),
+      (
+        'PredictiveBackPageTransitionsBuilder',
+        "Flutter's builder: push and pop fade",
+        PredictiveBackPageTransitionsBuilder(),
+      ),
+    ];
+
+/// Switches the Android builder so they can be compared.
+final ValueNotifier<PageTransitionsBuilder> androidBuilder =
+    ValueNotifier<PageTransitionsBuilder>(_builders.first.$3);
 
 void main() => runApp(
-  ValueListenableBuilder<bool>(
-    valueListenable: useCupertinoPush,
-    builder: (_, cupertinoPush, _) => MaterialApp(
+  ValueListenableBuilder<PageTransitionsBuilder>(
+    valueListenable: androidBuilder,
+    builder: (_, builder, _) => MaterialApp(
       theme: ThemeData(
         pageTransitionsTheme: PageTransitionsTheme(
           builders: <TargetPlatform, PageTransitionsBuilder>{
-            TargetPlatform.android: cupertinoPush
-                ? const CupertinoPushPredictiveBackBuilder()
-                : const PredictiveBackPageTransitionsBuilder(),
+            TargetPlatform.android: builder,
             TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
           },
         ),
@@ -42,20 +71,24 @@ class _Page extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          // The switch only swaps the Android builder.
+          // The picker only swaps the Android builder.
           if (android) ...<Widget>[
-            ValueListenableBuilder<bool>(
-              valueListenable: useCupertinoPush,
-              builder: (_, cupertinoPush, _) => SwitchListTile(
-                title: const Text('CupertinoPushPredictiveBackBuilder'),
-                subtitle: Text(
-                  cupertinoPush
-                      ? 'Push and pop slide like iOS'
-                      : "Off: Flutter's PredictiveBackPageTransitionsBuilder, "
-                            'push and pop fade',
-                ),
-                value: cupertinoPush,
-                onChanged: (value) => useCupertinoPush.value = value,
+            ValueListenableBuilder<PageTransitionsBuilder>(
+              valueListenable: androidBuilder,
+              builder: (_, current, _) => Column(
+                children: <Widget>[
+                  for (final (title, subtitle, builder) in _builders)
+                    ListTile(
+                      leading: Icon(
+                        builder == current
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: Text(title),
+                      subtitle: Text(subtitle),
+                      onTap: () => androidBuilder.value = builder,
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
