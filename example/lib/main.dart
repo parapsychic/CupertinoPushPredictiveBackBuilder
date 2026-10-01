@@ -97,18 +97,24 @@ class _Page extends StatelessWidget {
             ValueListenableBuilder<PageTransitionsBuilder>(
               valueListenable: androidBuilder,
               builder: (_, current, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  for (final (title, subtitle, builder) in _builders)
-                    ListTile(
-                      leading: Icon(
-                        builder == current
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                      ),
-                      title: Text(title),
-                      subtitle: Text(subtitle),
-                      onTap: () => androidBuilder.value = builder,
-                    ),
+                  DropdownButton<PageTransitionsBuilder>(
+                    isExpanded: true,
+                    value: current,
+                    items: <DropdownMenuItem<PageTransitionsBuilder>>[
+                      for (final (title, _, builder) in _builders)
+                        DropdownMenuItem<PageTransitionsBuilder>(
+                          value: builder,
+                          child: Text(title, overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (builder) => androidBuilder.value = builder!,
+                  ),
+                  Text(
+                    _builders.firstWhere((b) => b.$3 == current).$2,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),

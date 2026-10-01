@@ -49,8 +49,6 @@ built by routers such as go_router.
 
 ### Other combinations
 
-<img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/combinations.webp" alt="Back swipes with each builder in the example app: Cupertino, zoom, fade upwards and open upwards, in both swipe styles" width="320">
-
 Android has two predictive back swipe styles: the default one, where the page
 shrinks away from the swipe, and the full-screen one, where the page underneath
 moves into place. Pick the push/pop transition and the swipe style you want:
@@ -61,6 +59,13 @@ moves into place. Pick the push/pop transition and the swipe style you want:
 | Android zoom (Android 10+) | `ZoomPushPredictiveBackBuilder` | `ZoomPushPredictiveBackFullscreenBuilder` |
 | Fade upwards (Android 8) | `FadeUpwardsPushPredictiveBackBuilder` | `FadeUpwardsPushPredictiveBackFullscreenBuilder` |
 | Open upwards (Android 9) | `OpenUpwardsPushPredictiveBackBuilder` | `OpenUpwardsPushPredictiveBackFullscreenBuilder` |
+
+| Push / pop | Default back swipe | Full-screen back swipe |
+| --- | --- | --- |
+| Cupertino slide | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/cupertino.gif" alt="CupertinoPushPredictiveBackBuilder" width="200"> | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/cupertino_fullscreen.gif" alt="CupertinoPushPredictiveBackFullscreenBuilder" width="200"> |
+| Android zoom | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/zoom.gif" alt="ZoomPushPredictiveBackBuilder" width="200"> | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/zoom_fullscreen.gif" alt="ZoomPushPredictiveBackFullscreenBuilder" width="200"> |
+| Fade upwards | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/fade_upwards.gif" alt="FadeUpwardsPushPredictiveBackBuilder" width="200"> | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/fade_upwards_fullscreen.gif" alt="FadeUpwardsPushPredictiveBackFullscreenBuilder" width="200"> |
+| Open upwards | <img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/open_upwards.gif" alt="OpenUpwardsPushPredictiveBackBuilder" width="200"> | |
 
 Fade upwards and open upwards send the page back down on a back swipe instead.
 In their full-screen versions it slides down more slowly and fades out as the
