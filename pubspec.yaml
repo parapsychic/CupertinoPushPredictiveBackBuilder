@@ -2,7 +2,7 @@ name: cupertino_predictive_back
 description: >-
   Page transition that slides pages in like iOS on push and plays
   Android's predictive back animation when the user swipes back.
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/parapsychic/CupertinoPushPredictiveBackBuilder
 
 topics:
