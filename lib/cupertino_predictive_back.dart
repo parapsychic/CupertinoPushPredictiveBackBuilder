@@ -90,47 +90,29 @@ class CupertinoPushPredictiveBackFullscreenBuilder
       const PredictiveBackFullscreenPageTransitionsBuilder();
 }
 
-/// Zooms pages in and out like Android ([ZoomPageTransitionsBuilder]) on push
-/// and pop, and plays a predictive back animation while the user swipes back:
-/// the page shrinks and moves away from the swiped edge, then fades and zooms
-/// out when the swipe commits.
-///
-/// For zoom with the full-screen predictive back animation instead, use
-/// Flutter's [PredictiveBackFullscreenPageTransitionsBuilder].
-///
-/// * Push, back button, `Navigator.pop`: Android's zoom transition.
-/// * Back swipe (Android 14+): the predictive back animation, driven by the
-///   gesture. The page underneath stays still.
-///
-/// ```dart
-/// MaterialApp(
-///   theme: ThemeData(
-///     pageTransitionsTheme: const PageTransitionsTheme(
-///       builders: <TargetPlatform, PageTransitionsBuilder>{
-///         TargetPlatform.android: ZoomPushPredictiveBackBuilder(),
-///       },
-///     ),
-///   ),
-/// )
-/// ```
-class ZoomPushPredictiveBackBuilder extends PageTransitionsBuilder {
-  /// Creates a [ZoomPushPredictiveBackBuilder].
-  const ZoomPushPredictiveBackBuilder({
+/// Shared by the builders below: [_push] for pushes and pops, and a
+/// predictive back animation for back swipes.
+abstract class _PushPredictiveBackBuilder extends PageTransitionsBuilder {
+  const _PushPredictiveBackBuilder({
     this.popFadeDuration = const Duration(milliseconds: 150),
   });
 
   /// How long the page takes to fade and zoom out after a back swipe commits.
   ///
   /// It can't be longer than the pop transition (300 ms); longer values are
-  /// treated as 300 ms.
+  /// treated as 300 ms. [ZoomPushPredictiveBackFullscreenBuilder] ignores it;
+  /// Flutter's full-screen animation has its own fixed fade.
   final Duration popFadeDuration;
 
-  static const ZoomPageTransitionsBuilder _zoom = ZoomPageTransitionsBuilder();
+  PageTransitionsBuilder get _push;
+
+  // Whether the swipe wraps the push transition rather than sitting inside it.
+  bool get _swipeOutside => false;
+
+  PageTransitionsBuilder get _swipe => _SwipeBuilder(popFadeDuration);
 
   @override
-  Duration get transitionDuration => _zoom.transitionDuration;
-
-  PageTransitionsBuilder get _swipe => _ZoomSwipeBuilder(popFadeDuration);
+  Duration get transitionDuration => _push.transitionDuration;
 
   @override
   Widget buildTransitions<T>(
@@ -147,17 +129,32 @@ class ZoomPushPredictiveBackBuilder extends PageTransitionsBuilder {
     child,
     _swipe,
     (Animation<double> primary, Animation<double> secondary, Widget child) =>
-        _zoom.buildTransitions<T>(route, context, primary, secondary, child),
+        _push.buildTransitions<T>(route, context, primary, secondary, child),
+    swipeOutside: _swipeOutside,
   );
 }
 
-/// Like [ZoomPushPredictiveBackBuilder], but a back swipe plays Android's
-/// full-screen predictive back animation
-/// ([PredictiveBackFullscreenPageTransitionsBuilder]): the page stays full size
-/// and the page underneath moves into place.
+/// Zooms pages in and out like Android ([ZoomPageTransitionsBuilder]) on push and pop, and plays a predictive back animation while
+/// the user swipes back: the page shrinks and moves away from the swiped edge,
+/// then fades and zooms out when the swipe commits.
 ///
-/// [popFadeDuration] has no effect here; the full-screen animation has its own
-/// fixed fade.
+/// * Push, back button, `Navigator.pop`: Android's zoom transition.
+/// * Back swipe (Android 14+): the predictive back animation, driven by the
+///   gesture. The page underneath stays still.
+///
+/// For the full-screen predictive back animation instead, use
+/// [ZoomPushPredictiveBackFullscreenBuilder].
+class ZoomPushPredictiveBackBuilder extends _PushPredictiveBackBuilder {
+  /// Creates a [ZoomPushPredictiveBackBuilder].
+  const ZoomPushPredictiveBackBuilder({super.popFadeDuration});
+
+  @override
+  PageTransitionsBuilder get _push => const ZoomPageTransitionsBuilder();
+}
+
+/// Like [ZoomPushPredictiveBackBuilder], but a back swipe plays Android's full-screen
+/// predictive back animation ([PredictiveBackFullscreenPageTransitionsBuilder]):
+/// the page stays full size and the page underneath moves into place.
 class ZoomPushPredictiveBackFullscreenBuilder
     extends ZoomPushPredictiveBackBuilder {
   /// Creates a [ZoomPushPredictiveBackFullscreenBuilder].
@@ -166,6 +163,82 @@ class ZoomPushPredictiveBackFullscreenBuilder
   @override
   PageTransitionsBuilder get _swipe =>
       const PredictiveBackFullscreenPageTransitionsBuilder();
+}
+
+/// Fades pages in and out upwards like Android 8 ([FadeUpwardsPageTransitionsBuilder]) on push
+/// and pop, and plays a predictive back animation while the user swipes back:
+/// the page slides down with the gesture, then carries on down and fades out
+/// when the swipe commits.
+///
+/// * Push, back button, `Navigator.pop`: Android 8's fade upwards.
+/// * Back swipe (Android 14+): the predictive back animation, driven by the
+///   gesture. The page underneath stays still.
+///
+/// For the full-screen version, use [FadeUpwardsPushPredictiveBackFullscreenBuilder].
+class FadeUpwardsPushPredictiveBackBuilder extends _PushPredictiveBackBuilder {
+  /// Creates a [FadeUpwardsPushPredictiveBackBuilder].
+  const FadeUpwardsPushPredictiveBackBuilder({super.popFadeDuration});
+
+  @override
+  PageTransitionsBuilder get _push => const FadeUpwardsPageTransitionsBuilder();
+
+  @override
+  bool get _swipeOutside => true;
+
+  @override
+  PageTransitionsBuilder get _swipe =>
+      _SwipeBuilder(popFadeDuration, downwards: true);
+}
+
+/// Like [FadeUpwardsPushPredictiveBackBuilder], but in the full-screen style: during a back swipe the
+/// page slides down more slowly and fades out as the gesture goes on, rather
+/// than staying opaque until the swipe commits.
+class FadeUpwardsPushPredictiveBackFullscreenBuilder
+    extends FadeUpwardsPushPredictiveBackBuilder {
+  /// Creates a [FadeUpwardsPushPredictiveBackFullscreenBuilder].
+  const FadeUpwardsPushPredictiveBackFullscreenBuilder({super.popFadeDuration});
+
+  @override
+  PageTransitionsBuilder get _swipe =>
+      _SwipeBuilder(popFadeDuration, downwards: true, fullscreen: true);
+}
+
+/// Opens pages upwards like Android 9 ([OpenUpwardsPageTransitionsBuilder]) on push
+/// and pop, and plays a predictive back animation while the user swipes back:
+/// the page slides down with the gesture, then carries on down and fades out
+/// when the swipe commits.
+///
+/// * Push, back button, `Navigator.pop`: Android 9's open upwards.
+/// * Back swipe (Android 14+): the predictive back animation, driven by the
+///   gesture. The page underneath stays still.
+///
+/// For the full-screen version, use [OpenUpwardsPushPredictiveBackFullscreenBuilder].
+class OpenUpwardsPushPredictiveBackBuilder extends _PushPredictiveBackBuilder {
+  /// Creates a [OpenUpwardsPushPredictiveBackBuilder].
+  const OpenUpwardsPushPredictiveBackBuilder({super.popFadeDuration});
+
+  @override
+  PageTransitionsBuilder get _push => const OpenUpwardsPageTransitionsBuilder();
+
+  @override
+  bool get _swipeOutside => true;
+
+  @override
+  PageTransitionsBuilder get _swipe =>
+      _SwipeBuilder(popFadeDuration, downwards: true);
+}
+
+/// Like [OpenUpwardsPushPredictiveBackBuilder], but in the full-screen style: during a back swipe the
+/// page slides down more slowly and fades out as the gesture goes on, rather
+/// than staying opaque until the swipe commits.
+class OpenUpwardsPushPredictiveBackFullscreenBuilder
+    extends OpenUpwardsPushPredictiveBackBuilder {
+  /// Creates a [OpenUpwardsPushPredictiveBackFullscreenBuilder].
+  const OpenUpwardsPushPredictiveBackFullscreenBuilder({super.popFadeDuration});
+
+  @override
+  PageTransitionsBuilder get _swipe =>
+      _SwipeBuilder(popFadeDuration, downwards: true, fullscreen: true);
 }
 
 /// Wraps [child] in the [swipe] transition, inside the [push] transition used
@@ -182,8 +255,9 @@ Widget _withPredictiveBack<T>(
     Animation<double> secondary,
     Widget child,
   )
-  push,
-) {
+  push, {
+  bool swipeOutside = false,
+}) {
   // The predictive back builder's gesture detector has to stay mounted to
   // catch a swipe starting, so both transitions are always built and only
   // one gets the real route animations; the other gets inert ones.
@@ -195,18 +269,24 @@ Widget _withPredictiveBack<T>(
   // The push transition gets gated animations instead of swapped ones: the
   // zoom transition keeps the first animation it was given in places, so a
   // swapped-out route animation would go on driving it during the swipe.
+  //
+  // With swipeOutside, the swipe wraps the push transition instead, so it also
+  // moves and fades whatever the push transition paints around the page, such
+  // as OpenUpwards' scrim.
   final bool swiping = route.popGestureInProgress;
-  return push(
+  Widget swiped(Widget child) => swipe.buildTransitions<T>(
+    route,
+    context,
+    swiping ? animation : kAlwaysCompleteAnimation,
+    swiping ? secondaryAnimation : kAlwaysDismissedAnimation,
+    child,
+  );
+  Widget pushed(Widget child) => push(
     _NotWhileSwiping(animation, route, AnimationStatus.completed),
     _NotWhileSwiping(secondaryAnimation, route, AnimationStatus.dismissed),
-    swipe.buildTransitions<T>(
-      route,
-      context,
-      swiping ? animation : kAlwaysCompleteAnimation,
-      swiping ? secondaryAnimation : kAlwaysDismissedAnimation,
-      child,
-    ),
+    child,
   );
+  return swipeOutside ? swiped(pushed(child)) : pushed(swiped(child));
 }
 
 /// Follows [parent], but holds at the end given by [swipingStatus] while a
@@ -230,11 +310,28 @@ class _NotWhileSwiping extends Animation<double>
       route.popGestureInProgress ? swipingStatus : parent.status;
 }
 
-/// [ZoomPushPredictiveBackBuilder]'s back swipe.
-class _ZoomSwipeBuilder extends PageTransitionsBuilder {
-  const _ZoomSwipeBuilder(this.commitDuration);
+// Gesture progress at which the full-screen downwards swipe has faded the page
+// out completely. Android reports about 0.3 for a swipe across a third of the
+// screen, so 0.4 is roughly a half-screen swipe.
+// ponytail: fixed; make it a builder option if apps want to tune it.
+const double _kFullscreenFadedAt = 0.4;
+
+/// The default back swipe of the builders built on [_PushPredictiveBackBuilder].
+class _SwipeBuilder extends PageTransitionsBuilder {
+  const _SwipeBuilder(
+    this.commitDuration, {
+    this.downwards = false,
+    this.fullscreen = false,
+  });
 
   final Duration commitDuration;
+
+  /// Slide the page down instead of shrinking it, for the upwards push
+  /// transitions.
+  final bool downwards;
+
+  /// With [downwards], slide more slowly and fade out during the gesture.
+  final bool fullscreen;
 
   @override
   Widget buildTransitions<T>(
@@ -243,32 +340,40 @@ class _ZoomSwipeBuilder extends PageTransitionsBuilder {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
     Widget child,
-  ) => _ZoomSwipe(
+  ) => _Swipe(
     route: route,
     animation: animation,
     commitDuration: commitDuration,
+    downwards: downwards,
+    fullscreen: fullscreen,
     child: child,
   );
 }
 
-class _ZoomSwipe extends StatefulWidget {
-  const _ZoomSwipe({
+class _Swipe extends StatefulWidget {
+  const _Swipe({
     required this.route,
     required this.animation,
     required this.commitDuration,
+    required this.downwards,
+    required this.fullscreen,
     required this.child,
   });
 
   final PageRoute<dynamic> route;
   final Animation<double> animation;
   final Duration commitDuration;
+  final bool downwards;
+
+  /// With [downwards], slide more slowly and fade out during the gesture.
+  final bool fullscreen;
   final Widget child;
 
   @override
-  State<_ZoomSwipe> createState() => _ZoomSwipeState();
+  State<_Swipe> createState() => _SwipeState();
 }
 
-class _ZoomSwipeState extends State<_ZoomSwipe> with WidgetsBindingObserver {
+class _SwipeState extends State<_Swipe> with WidgetsBindingObserver {
   // Whether this route is the one being swiped away.
   bool _swiped = false;
   SwipeEdge _edge = SwipeEdge.left;
@@ -335,7 +440,7 @@ class _ZoomSwipeState extends State<_ZoomSwipe> with WidgetsBindingObserver {
     if (!_swiped || !widget.route.popGestureInProgress) {
       return widget.child;
     }
-    final double width = MediaQuery.widthOf(context);
+    final Size size = MediaQuery.sizeOf(context);
     return AnimatedBuilder(
       animation: widget.animation,
       builder: (BuildContext context, Widget? child) {
@@ -346,10 +451,28 @@ class _ZoomSwipeState extends State<_ZoomSwipe> with WidgetsBindingObserver {
         final double committed = _committedAt == null
             ? 1
             : clampDouble(1 - (1 - value) / _commitFraction, 0, 1);
+        if (widget.downwards) {
+          // The page follows the gesture down (half as fast in the
+          // full-screen style, which also fades it as the gesture goes on),
+          // then carries on to a quarter of the screen height while it fades,
+          // the reverse of the upwards push.
+          final double end = size.height / 4;
+          final double dragged = end * progress * (widget.fullscreen ? 0.5 : 1);
+          final double fade = widget.fullscreen
+              ? clampDouble(1 - progress / _kFullscreenFadedAt, 0, 1)
+              : 1;
+          return Opacity(
+            opacity: clampDouble(fade * committed, 0, 1),
+            child: Transform.translate(
+              offset: Offset(0, end + (dragged - end) * committed),
+              child: child,
+            ),
+          );
+        }
         // Scale, shift and corner radius follow Android's predictive back
         // motion spec.
         // ponytail: ignores vertical drag, add a y shift if it's missed.
-        final double shift = (width / 20 - 8) * progress;
+        final double shift = (size.width / 20 - 8) * progress;
         return Opacity(
           opacity: committed,
           child: Transform.translate(

@@ -178,6 +178,77 @@ void main() {
     );
   });
 
+  for (final (PageTransitionsBuilder builder, bool fadesWhileSwiping)
+      in <(PageTransitionsBuilder, bool)>[
+        (const FadeUpwardsPushPredictiveBackBuilder(), false),
+        (const FadeUpwardsPushPredictiveBackFullscreenBuilder(), true),
+        (const OpenUpwardsPushPredictiveBackBuilder(), false),
+        (const OpenUpwardsPushPredictiveBackFullscreenBuilder(), true),
+      ]) {
+    testWidgets('${builder.runtimeType} back swipe slides the page down', (
+      WidgetTester tester,
+    ) async {
+      await _pumpAndPush(tester, builder);
+      await tester.pumpAndSettle();
+      final Size screen = tester.getSize(find.byType(MaterialApp));
+
+      await _backGesture(tester, 'startBackGesture');
+      await _backGesture(tester, 'updateBackGestureProgress', 0.2);
+      await tester.pump();
+      final Rect early = _pageRect(tester, next);
+      await _backGesture(tester, 'updateBackGestureProgress', 0.5);
+      await tester.pump();
+      final Rect later = _pageRect(tester, next);
+
+      expect(early.top, greaterThan(0));
+      expect(later.top, greaterThan(early.top));
+      expect(later.left, 0);
+      expect(later.width, screen.width);
+      // The page underneath stays put.
+      expect(_pageRect(tester, home), Offset.zero & screen);
+
+      final double opacity = tester
+          .widget<Opacity>(
+            find.ancestor(of: next, matching: find.byType(Opacity)).first,
+          )
+          .opacity;
+      expect(opacity, fadesWhileSwiping ? 0.0 : 1.0);
+    });
+  }
+
+  testWidgets('open upwards back swipe fades the scrim with the page', (
+    WidgetTester tester,
+  ) async {
+    await _pumpAndPush(
+      tester,
+      const OpenUpwardsPushPredictiveBackFullscreenBuilder(),
+    );
+    await tester.pumpAndSettle();
+
+    await _backGesture(tester, 'startBackGesture');
+    await _backGesture(tester, 'updateBackGestureProgress', 0.5);
+    await tester.pump();
+
+    // OpenUpwards paints a black scrim behind the new page. Once the page has
+    // faded out, the scrim must have gone with it, not darken the page below.
+    final Finder scrim = find.ancestor(
+      of: next,
+      matching: find.byWidgetPredicate(
+        (Widget w) => w is ColoredBox && w.color.a > 0,
+      ),
+    );
+    expect(scrim, findsOneWidget);
+    expect(
+      find.ancestor(
+        of: scrim,
+        matching: find.byWidgetPredicate(
+          (Widget w) => w is Opacity && w.opacity == 0,
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
+
   // The default swipe shrinks the top page; the fullscreen one keeps it
   // full size and moves the page underneath instead.
   for (final (String name, PageTransitionsBuilder builder, Finder moving)
@@ -193,6 +264,18 @@ void main() {
           'zoom fullscreen',
           const ZoomPushPredictiveBackFullscreenBuilder(),
           home,
+        ),
+        ('fade upwards', const FadeUpwardsPushPredictiveBackBuilder(), next),
+        (
+          'fade upwards fullscreen',
+          const FadeUpwardsPushPredictiveBackFullscreenBuilder(),
+          next,
+        ),
+        ('open upwards', const OpenUpwardsPushPredictiveBackBuilder(), next),
+        (
+          'open upwards fullscreen',
+          const OpenUpwardsPushPredictiveBackFullscreenBuilder(),
+          next,
         ),
       ]) {
     testWidgets('$name back swipe follows the gesture and pops on commit', (

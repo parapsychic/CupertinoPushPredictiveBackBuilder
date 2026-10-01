@@ -47,6 +47,30 @@ MaterialApp(
 It applies to every `MaterialPageRoute` / `MaterialPage`, including pages
 built by routers such as go_router.
 
+### Other combinations
+
+<img src="https://raw.githubusercontent.com/parapsychic/CupertinoPushPredictiveBackBuilder/main/doc/combinations.webp" alt="Back swipes with each builder in the example app: Cupertino, zoom, fade upwards and open upwards, in both swipe styles" width="320">
+
+Android has two predictive back swipe styles: the default one, where the page
+shrinks away from the swipe, and the full-screen one, where the page underneath
+moves into place. Pick the push/pop transition and the swipe style you want:
+
+| Push / pop | Default back swipe | Full-screen back swipe |
+| --- | --- | --- |
+| Cupertino slide | `CupertinoPushPredictiveBackBuilder` | `CupertinoPushPredictiveBackFullscreenBuilder` |
+| Android zoom (Android 10+) | `ZoomPushPredictiveBackBuilder` | `ZoomPushPredictiveBackFullscreenBuilder` |
+| Fade upwards (Android 8) | `FadeUpwardsPushPredictiveBackBuilder` | `FadeUpwardsPushPredictiveBackFullscreenBuilder` |
+| Open upwards (Android 9) | `OpenUpwardsPushPredictiveBackBuilder` | `OpenUpwardsPushPredictiveBackFullscreenBuilder` |
+
+Fade upwards and open upwards send the page back down on a back swipe instead.
+In their full-screen versions it slides down more slowly and fades out as the
+gesture goes on, fully gone by about a half-screen swipe.
+
+`popFadeDuration` sets how long the page takes to fade out after a back swipe
+commits (default 150 ms, maximum 300 ms). It applies to every zoom, fade
+upwards and open upwards builder except `ZoomPushPredictiveBackFullscreenBuilder`,
+which uses Flutter's full-screen animation.
+
 ## Notes
 
 - **Predictive back needs opting in on Android.** Add

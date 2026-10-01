@@ -26,6 +26,26 @@ const List<(String, String, PageTransitionsBuilder)> _builders =
         ZoomPushPredictiveBackFullscreenBuilder(),
       ),
       (
+        'FadeUpwardsPushPredictiveBackBuilder',
+        'Push and pop fade upwards like Android 8',
+        FadeUpwardsPushPredictiveBackBuilder(),
+      ),
+      (
+        'FadeUpwardsPushPredictiveBackFullscreenBuilder',
+        'Push and pop fade upwards like Android 8; full-screen back swipe',
+        FadeUpwardsPushPredictiveBackFullscreenBuilder(),
+      ),
+      (
+        'OpenUpwardsPushPredictiveBackBuilder',
+        'Push and pop open upwards like Android 9',
+        OpenUpwardsPushPredictiveBackBuilder(),
+      ),
+      (
+        'OpenUpwardsPushPredictiveBackFullscreenBuilder',
+        'Push and pop open upwards like Android 9; full-screen back swipe',
+        OpenUpwardsPushPredictiveBackFullscreenBuilder(),
+      ),
+      (
         'PredictiveBackPageTransitionsBuilder',
         "Flutter's builder: push and pop fade",
         PredictiveBackPageTransitionsBuilder(),
@@ -40,6 +60,7 @@ void main() => runApp(
   ValueListenableBuilder<PageTransitionsBuilder>(
     valueListenable: androidBuilder,
     builder: (_, builder, _) => MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         pageTransitionsTheme: PageTransitionsTheme(
           builders: <TargetPlatform, PageTransitionsBuilder>{
